@@ -1,183 +1,151 @@
 """
-SkillMatch2050 - Protótipo para 'Novas carreiras, novas tecnologias'
+FutureWork Network — Sistema simples de análise de perfis para o futuro do trabalho
+Atende: entrada, saída, repetição, condição, funções, função interna e DataFrame.
 """
 
 import pandas as pd
-import random
 from datetime import datetime
 
 
-# === Base de carreiras do futuro ===
-CAREERS = [
-    {"career": "Engenheiro de IA Ética", "tech": ["IA", "ML"], "human_skills": ["ética", "pensamento crítico"], "impact": 9},
-    {"career": "Especialista em Robótica Colaborativa", "tech": ["robótica", "IoT"], "human_skills": ["colaboração", "criatividade"], "impact": 8},
-    {"career": "Gestor de Requalificação", "tech": ["e-learning", "plataformas"], "human_skills": ["didática", "empatia"], "impact": 7},
-    {"career": "Curador de Dados Sustentáveis", "tech": ["big data", "cloud"], "human_skills": ["consciência ambiental", "governança"], "impact": 8},
-    {"career": "Designer de Experiências Híbridas", "tech": ["UX", "AR/VR"], "human_skills": ["criatividade", "colaboração"], "impact": 7},
-    {"career": "Analista de Impacto Social de Tech", "tech": ["analytics", "IA"], "human_skills": ["empatia", "ética"], "impact": 9}
-]
 
+# Coleta de perfis (entrada)
 
-# === Entrada do usuário ===
-def collect_user_profiles():
-    profiles = []
-    print("=== Coleta de perfis para recomendações (digite 'fim' para encerrar) ===")
+def coletar_perfis():
+    perfis = []
+    print("\n=== FutureWork Network — Cadastro de Perfis ===")
 
     while True:
-        name = input("Nome (ou 'fim'): ").strip()
-        if name.lower() == "fim":
+        nome = input("Nome (ou 'fim' para encerrar): ").strip()
+        if nome.lower() == "fim":
             break
 
-        skills = input("Skills atuais (ex: comunicação,python): ").strip()
-        tech_interest = input("Interesse em tecnologia (IA, robótica...) ou 'qualquer': ").strip()
+        area = input("Área de interesse (tech, design, gestão, saúde): ").strip().lower()
+        experiencia = input("Experiência (iniciante, médio, avançado): ").strip().lower()
 
         while True:
             try:
-                availability = int(input("Disponibilidade para requalificação (1-5): "))
-                if 1 <= availability <= 5:
+                dispo = int(input("Disponibilidade semanal (1 a 5): "))
+                if 1 <= dispo <= 5:
                     break
-                else:
-                    print("Digite um número entre 1 e 5.")
+                print("Use um valor entre 1 e 5.")
             except:
                 print("Valor inválido.")
 
-        profiles.append({
-            "name": name,
-            "skills": [s.strip().lower() for s in skills.split(",") if s.strip()],
-            "tech_interest": [t.strip() for t in tech_interest.split(",")] if tech_interest.lower() != "qualquer" else [],
-            "availability": availability
+        perfis.append({
+            "nome": nome,
+            "area": area,
+            "experiencia": experiencia,
+            "dispo": dispo
         })
 
-        print(f"Perfil de {name} adicionado.\n")
+        print("Perfil registrado.\n")
 
-    return profiles
-
-
-# === Função dentro de função + cálculo de score ===
-def score_fit(profile, career):
-
-    def _skill_overlap(user, needed):
-        return len(set(user).intersection({s.lower() for s in needed}))
-
-    human_overlap = _skill_overlap(profile["skills"], career["human_skills"])
-
-    tech_bonus = 0
-    if profile["tech_interest"]:
-        if any(t.lower() in [c.lower() for c in career["tech"]] for t in profile["tech_interest"]):
-            tech_bonus = 2
-
-    availability_score = profile["availability"] / 5
-    impact = career["impact"] / 10
-
-    score = (human_overlap * 1.5) + tech_bonus + (availability_score * 2) + (impact * 3)
-    return min(100, int(score * 10))
+    return perfis
 
 
-# === Repetição + Condições ===
-def recommend_careers_for_profile(profile, top_n=3):
-    scored = []
 
-    for c in CAREERS:
-        s = score_fit(profile, c)
-        scored.append({
-            "career": c["career"],
-            "score": s,
-            "tech": c["tech"],
-            "impact": c["impact"]
+# Mostrar perfis cadastrados
+
+def mostrar_perfis(perfis):
+    if not perfis:
+        print("\nNenhum perfil cadastrado.")
+        return
+
+    print("\n=== Perfis Cadastrados ===")
+    for p in perfis:
+        print(f"- {p['nome']} | área: {p['area']} | exp: {p['experiencia']} | disp: {p['dispo']}")
+    print("==========================\n")
+
+
+
+# Classificação (com função interna)
+
+def classificar(perfil):
+
+    def peso_exp(nivel):
+        if nivel == "iniciante": return 1
+        if nivel == "médio" or nivel == "medio": return 2
+        if nivel == "avançado" or nivel == "avancado": return 3
+        return 1
+
+    xp = peso_exp(perfil["experiencia"])
+    disp = perfil["dispo"]
+
+    area = perfil["area"]
+
+    if area == "tech":
+        trilha = "Programação / IA"
+    elif area == "design":
+        trilha = "UX / Design Digital"
+    elif area == "gestão":
+        trilha = "Liderança / Dados"
+    elif area == "saúde":
+        trilha = "Saúde Digital"
+    else:
+        trilha = "Descoberta de Perfil"
+
+    score = xp * 2 + disp
+    return trilha, score
+
+
+# DataFrame
+
+def montar_dataframe(perfis):
+    dados = []
+
+    for p in perfis:
+        trilha, score = classificar(p)
+        dados.append({
+            "nome": p["nome"],
+            "area": p["area"],
+            "experiencia": p["experiencia"],
+            "disponibilidade": p["dispo"],
+            "trilha_sugerida": trilha,
+            "score": score,
+            "timestamp": datetime.now().isoformat()
         })
 
-    scored_sorted = sorted(scored, key=lambda x: x["score"], reverse=True)
-
-    recommendations = []
-    for item in scored_sorted[:top_n]:
-        if item["score"] < 40:
-            note = "Recomenda-se curso introdutório."
-        elif item["score"] < 70:
-            note = "Boa compatibilidade — focar requalificação específica."
-        else:
-            note = "Excelente compatibilidade — seguir plano avançado."
-
-        recommendations.append({**item, "note": note})
-
-    return recommendations
-
-
-# DataFrame 
-def build_dataframe(profiles, recs):
-    rows = []
-
-    for prof, rec_list in zip(profiles, recs):
-        for r in rec_list:
-            rows.append({
-                "name": prof["name"],
-                "skills": ", ".join(prof["skills"]),
-                "availability": prof["availability"],
-                "recommended_career": r["career"],
-                "score": r["score"],
-                "note": r["note"],
-                "tech_required": ", ".join(r["tech"]),
-                "timestamp": datetime.utcnow().isoformat()
-            })
-
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(dados)
     return df.sort_values(by="score", ascending=False).reset_index(drop=True)
 
 
-# Saída
-def generate_report(df, save_csv=False):
-    print("\n=== RELATÓRIO FINAL ===")
-    
-    if df.empty:
-        print("Nenhum dado encontrado.")
-        return
+# Relatório final (saída)
 
-    top = df.head(10)
+def relatorio(df):
+    print("\n=== Relatório FutureWork ===")
 
-    for _, row in top.iterrows():
-        print(f"{row['name']} → {row['recommended_career']} (score {row['score']}) — {row['note']}")
+    for _, linha in df.head(5).iterrows():
+        print(f"{linha['nome']} → {linha['trilha_sugerida']} (Score {linha['score']})")
 
-    print("\nCarreiras mais recomendadas:")
-    print(df.groupby("recommended_career")["name"].count().sort_values(ascending=False))
+    print("\nContagem por trilha:")
+    print(df.groupby("trilha_sugerida")["nome"].count())
 
-    if save_csv:
-        df.to_csv("skillmatch_report.csv", index=False)
-        print("\nArquivo salvo como 'skillmatch_report.csv'.")
 
 
 # Main
+
 def main():
-    print("SkillMatch2050 — Recomendações de carreiras do futuro\n")
+    perfis = coletar_perfis()
 
-    profiles = collect_user_profiles()
+    if not perfis:
+        print("Nenhum perfil inserido.")
+        return
 
-    if not profiles:
-        print("Nenhum perfil informado — gerando exemplos automáticos.\n")
-        example_skills = [
-            ["comunicação", "ética"],
-            ["python", "estatistica"],
-            ["design", "colaboração"],
-            ["gestão", "empatia"]
-        ]
-        for i in range(4):
-            profiles.append({
-                "name": f"Aluno_{i+1}",
-                "skills": example_skills[i],
-                "tech_interest": random.choice([["IA"], ["robótica"], ["AR/VR"], []]),
-                "availability": random.randint(2, 5)
-            })
+    ver = input("Mostrar perfis cadastrados? (s/n): ").lower()
+    if ver == "s":
+        mostrar_perfis(perfis)
 
-    all_recs = []
-    for p in profiles:
-        all_recs.append(recommend_careers_for_profile(p))
+    df = montar_dataframe(perfis)
+    relatorio(df)
 
-    df = build_dataframe(profiles, all_recs)
+    salvar = input("\nSalvar como CSV? (s/n): ").lower()
+    if salvar == "s":
+        df.to_csv("futurework_network.csv", index=False)
+        print("Arquivo salvo.")
 
-    save = input("Salvar relatório em CSV? (s/n): ").lower()
-    generate_report(df, save_csv=(save == "s"))
-
-    show = input("Mostrar DataFrame completo? (s/n): ").lower()
-    if show == "s":
-        print(df.to_string(index=False))
+    ver_df = input("Mostrar DataFrame completo? (s/n): ").lower()
+    if ver_df == "s":
+        print("\n", df.to_string(index=False))
 
 
 if __name__ == "__main__":
