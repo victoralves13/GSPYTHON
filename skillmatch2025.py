@@ -1,12 +1,5 @@
 """
 SkillMatch2050 - Protótipo para 'Novas carreiras, novas tecnologias'
-Atende todos os requisitos da GS:
-- Entrada (input)
-- Saída (relatório e CSV)
-- Repetição (processamento de vários perfis)
-- Condição (decisões inteligentes)
-- Funções e função dentro de função
-- DataFrame (pandas)
 """
 
 import pandas as pd
