@@ -1,6 +1,6 @@
 """
 FutureWork Network — Sistema simples de análise de perfis para o futuro do trabalho
-Atende: entrada, saída, repetição, condição, funções, função interna e DataFrame.
+
 """
 
 import pandas as pd
